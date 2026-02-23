@@ -19,13 +19,21 @@ DATABASES=("db_one" "db_two" "db_three" "db_four" "db_five")
 for DB in "${DATABASES[@]}"; do
 
   echo "Dumping $DB..."
-  # Export tables + data + routines + triggers from source into a sql file
   mysqldump -h "$SRC_HOST" -P "$SRC_PORT" -u "$SRC_USER" -p"$SRC_PASS" \
 	  --routines --triggers "$DB" > "${DB}_dump.sql"
 
+  if [ $? -ne 0 ]; then
+	  echo "Failed to dump $DB, skipping."
+	  continue
+  fi
+
   echo "Importing $DB..."
-  # Import the sql file into the target server's database
   mysql -h "$TGT_HOST" -P "$TGT_PORT" -u "$TGT_USER" -p"$TGT_PASS" "$DB" < "${DB}_dump.sql"
+
+  if [ $? -ne 0 ]; then
+	  echo "Failed to import $DB."
+	  continue
+  fi
 
   echo "$DB done."
   
